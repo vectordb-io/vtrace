@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>系统日志</h2>
+    <div id="kernelLogs" style="height: 400px; overflow-y: auto; font-family: monospace; background-color: #f5f5f5; padding: 10px;"></div>
+</div>
+
+<div class="card">
+    <h2>应用日志</h2>
+    <div id="appLogs" style="height: 400px; overflow-y: auto; font-family: monospace; background-color: #f5f5f5; padding: 10px;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateLogs() {
+    fetch('/api/logs')
+        .then(response => response.json())
+        .then(data => {
+            // 更新内核日志
+            const kernelLogsDiv = document.getElementById('kernelLogs');
+            kernelLogsDiv.innerHTML = data.kernel_logs.join('<br>');
+            
+            // 更新应用日志
+            const appLogsDiv = document.getElementById('appLogs');
+            let appLogsHtml = '';
+            for (const [filename, logs] of Object.entries(data.specified_logs)) {
+                appLogsHtml += `<h3>${filename}</h3>`;
+                appLogsHtml += logs.join('<br>');
+                appLogsHtml += '<hr>';
+            }
+            appLogsDiv.innerHTML = appLogsHtml;
+            
+            // 自动滚动到底部
+            kernelLogsDiv.scrollTop = kernelLogsDiv.scrollHeight;
+            appLogsDiv.scrollTop = appLogsDiv.scrollHeight;
+        });
+}
+
+// 定时更新日志
+setInterval(updateLogs, 5000);
+updateLogs(); // 首次加载
+</script>
+{% endblock %} 

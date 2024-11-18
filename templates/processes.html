@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>CPU 使用率 TOP 10</h2>
+    <div id="cpuTop" class="process-list"></div>
+</div>
+
+<div class="card">
+    <h2>内存使用率 TOP 10</h2>
+    <div id="memoryTop" class="process-list"></div>
+</div>
+
+<div class="card">
+    <h2>磁盘 IO TOP 10</h2>
+    <div id="diskTop" class="process-list"></div>
+</div>
+
+<div class="card">
+    <h2>网络流量 TOP 10</h2>
+    <div id="networkTop" class="process-list"></div>
+</div>
+
+<div class="card">
+    <h2>指定进程状态</h2>
+    <div id="processExist" class="process-list"></div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+    .process-list {
+        font-family: monospace;
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-radius: 5px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .timestamp {
+        color: #666;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .process-item {
+        margin: 5px 0;
+        padding: 5px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .process-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function formatProcessData(lines) {
+    if (!lines || lines.length === 0) return '';
+    
+    let html = '';
+    let timestamp = '';
+    
+    for (let line of lines) {
+        if (line.trim() === '') continue;
+        
+        if (line.match(/^\d{4}-\d{2}-\d{2}/)) {
+            // 这是时间戳行
+            timestamp = line.trim();
+            html += `<div class="timestamp">${timestamp}</div>`;
+        } else {
+            // 这是进程信息行
+            html += `<div class="process-item">${line}</div>`;
+        }
+    }
+    
+    return html;
+}
+
+function updateProcesses() {
+    fetch('/api/processes')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('cpuTop').innerHTML = formatProcessData(data.cpu_top);
+            document.getElementById('memoryTop').innerHTML = formatProcessData(data.memory_top);
+            document.getElementById('diskTop').innerHTML = formatProcessData(data.disk_top);
+            document.getElementById('networkTop').innerHTML = formatProcessData(data.network_top);
+            document.getElementById('processExist').innerHTML = formatProcessData(data.process_exist);
+        });
+}
+
+// 定时更新进程信息
+setInterval(updateProcesses, 1000);
+updateProcesses(); // 首次加载
+</script>
+{% endblock %} 

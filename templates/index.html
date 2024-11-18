@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>系统监控</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* 导航栏样式 */
+        .nav {
+            background-color: #333;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .nav a {
+            float: left;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+        
+        .nav a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        
+        .nav a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* 图表样式 */
+        .chart {
+            width: 100%;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <a href="/" class="active">系统监控</a>
+        <a href="/logs">日志查看</a>
+        <a href="/processes">进程信息</a>
+    </div>
+
+    <!-- 图表容器 -->
+    <div id="cpu-chart" class="chart"></div>
+    <div id="memory-chart" class="chart"></div>
+    <div id="disk-chart" class="chart"></div>
+    <div id="disk-io-chart" class="chart"></div>
+    <div id="network-chart" class="chart"></div>
+
+    <script>
+        // CPU图表初始化
+        var cpuChart = echarts.init(document.getElementById('cpu-chart'));
+        var cpuOption = {
+            title: {
+                text: 'CPU使用率监控'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            xAxis: {
+                type: 'category',
+                data: []
+            },
+            yAxis: {
+                type: 'value',
+                name: '%'
+            },
+            series: [{
+                name: 'CPU使用率',
+                type: 'line',
+                data: []
+            }]
+        };
+        cpuChart.setOption(cpuOption);
+
+        // 内存图表初始化
+        var memoryChart = echarts.init(document.getElementById('memory-chart'));
+        var memoryOption = {
+            title: {
+                text: '内存使用率监控'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            xAxis: {
+                type: 'category',
+                data: []
+            },
+            yAxis: {
+                type: 'value',
+                name: '%'
+            },
+            series: [{
+                name: '内存使用率',
+                type: 'line',
+                data: []
+            }]
+        };
+        memoryChart.setOption(memoryOption);
+
+        // 磁盘使用率图表初始化
+        var diskChart = echarts.init(document.getElementById('disk-chart'));
+        var diskOption = {
+            title: {
+                text: '磁盘使用率监控'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            xAxis: {
+                type: 'category',
+                data: []
+            },
+            yAxis: {
+                type: 'value',
+                name: '%'
+            },
+            series: [{
+                name: '磁盘使用率',
+                type: 'line',
+                data: []
+            }]
+        };
+        diskChart.setOption(diskOption);
+
+        // 磁盘IO图表初始化
+        var diskIOChart = echarts.init(document.getElementById('disk-io-chart'));
+        var diskIOOption = {
+            title: {
+                text: '磁盘IO监控'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['读取(MB)', '写入(MB)']
+            },
+            xAxis: {
+                type: 'category',
+                data: []
+            },
+            yAxis: {
+                type: 'value',
+                name: 'MB'
+            },
+            series: [
+                {
+                    name: '读取(MB)',
+                    type: 'line',
+                    data: []
+                },
+                {
+                    name: '写入(MB)',
+                    type: 'line',
+                    data: []
+                }
+            ]
+        };
+        diskIOChart.setOption(diskIOOption);
+
+        // 网络流量图表初始化
+        var networkChart = echarts.init(document.getElementById('network-chart'));
+        var networkOption = {
+            title: {
+                text: '网络流量监控'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['发送', '接收']
+            },
+            xAxis: {
+                type: 'category',
+                data: []
+            },
+            yAxis: {
+                type: 'value',
+                name: 'bytes'
+            },
+            series: [
+                {
+                    name: '发送',
+                    type: 'line',
+                    data: []
+                },
+                {
+                    name: '接收',
+                    type: 'line',
+                    data: []
+                }
+            ]
+        };
+        networkChart.setOption(networkOption);
+
+        // 更新数据函数
+        function updateCharts() {
+            fetch('/api/system_data')
+                .then(response => response.json())
+                .then(data => {
+                    // 更新CPU图表
+                    var cpuTimestamps = data.cpu.map(line => line.split(' ')[1]);
+                    var cpuValues = data.cpu.map(line => parseFloat(line.split(' ')[2]));
+                    cpuChart.setOption({
+                        xAxis: { data: cpuTimestamps },
+                        series: [{ data: cpuValues }]
+                    });
+
+                    // 更新内存图表
+                    var memoryTimestamps = data.memory.map(line => line.split(' ')[1]);
+                    var memoryValues = data.memory.map(line => parseFloat(line.split(' ')[2]));
+                    memoryChart.setOption({
+                        xAxis: { data: memoryTimestamps },
+                        series: [{ data: memoryValues }]
+                    });
+
+                    // 更新磁盘使用率图表
+                    var diskTimestamps = data.disk.map(line => line.split(' ')[1]);
+                    var diskValues = data.disk.map(line => {
+                        var parts = line.split(' ');
+                        return parseFloat(parts[parts.length - 1]);
+                    });
+                    diskChart.setOption({
+                        xAxis: { data: diskTimestamps },
+                        series: [{ data: diskValues }]
+                    });
+
+                    // 更新磁盘IO图表
+                    var diskIOTimestamps = data.disk_io.map(item => item.timestamp);
+                    var diskIOReads = data.disk_io.map(item => item.read_mb);
+                    var diskIOWrites = data.disk_io.map(item => item.write_mb);
+                    diskIOChart.setOption({
+                        xAxis: { data: diskIOTimestamps },
+                        series: [
+                            { data: diskIOReads },
+                            { data: diskIOWrites }
+                        ]
+                    });
+
+                    // 更新网络流量图表
+                    var networkTimestamps = data.network.map(line => line.split(' ')[1]);
+                    var networkSent = data.network.map(line => {
+                        var parts = line.split(' ');
+                        return parseInt(parts[2].split(':')[1]);
+                    });
+                    var networkRecv = data.network.map(line => {
+                        var parts = line.split(' ');
+                        return parseInt(parts[3].split(':')[1]);
+                    });
+                    networkChart.setOption({
+                        xAxis: { data: networkTimestamps },
+                        series: [
+                            { data: networkSent },
+                            { data: networkRecv }
+                        ]
+                    });
+                });
+        }
+
+        // 定期更新数据
+        setInterval(updateCharts, 1000);
+        updateCharts();
+
+        // 窗口大小改变时重绘图表
+        window.addEventListener('resize', function() {
+            cpuChart.resize();
+            memoryChart.resize();
+            diskChart.resize();
+            diskIOChart.resize();
+            networkChart.resize();
+        });
+    </script>
+</body>
+</html> 

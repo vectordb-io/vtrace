@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid">
+    <div class="card">
+        <h2>CPU 使用率</h2>
+        <div id="cpuChart" style="height: 300px;"></div>
+    </div>
+    
+    <div class="card">
+        <h2>内存使用率</h2>
+        <div id="memoryChart" style="height: 300px;"></div>
+    </div>
+    
+    <div class="card">
+        <h2>磁盘使用率</h2>
+        <div id="diskChart" style="height: 300px;"></div>
+    </div>
+    
+    <div class="card">
+        <h2>网络流量</h2>
+        <div id="networkChart" style="height: 300px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 初始化图表
+const cpuChart = echarts.init(document.getElementById('cpuChart'));
+const memoryChart = echarts.init(document.getElementById('memoryChart'));
+const diskChart = echarts.init(document.getElementById('diskChart'));
+const networkChart = echarts.init(document.getElementById('networkChart'));
+
+// 基础配置
+function getBaseOption(title) {
+    return {
+        title: {
+            text: title
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        xAxis: {
+            type: 'time',
+            splitLine: {
+                show: false
+            }
+        },
+        yAxis: {
+            type: 'value',
+            splitLine: {
+                show: true,
+                lineStyle: {
+                    type: 'dashed'
+                }
+            }
+        },
+        series: [{
+            type: 'line',
+            smooth: true,
+            data: []
+        }]
+    };
+}
+
+// 设置初始配置
+cpuChart.setOption(getBaseOption('CPU使用率 (%)'));
+memoryChart.setOption(getBaseOption('内存使用率 (%)'));
+diskChart.setOption(getBaseOption('磁盘使用率 (%)'));
+networkChart.setOption(getBaseOption('网络流量 (MB/s)'));
+
+// 更新数据函数
+function updateCharts() {
+    fetch('/api/system_data')
+        .then(response => response.json())
+        .then(data => {
+            // 更新CPU图表
+            cpuChart.setOption({
+                series: [{
+                    data: data.cpu.map(item => [item.timestamp, item.cpu])
+                }]
+            });
+
+            // 更新内存图表
+            memoryChart.setOption({
+                series: [{
+                    data: data.memory.map(item => [item.timestamp, item.memory])
+                }]
+            });
+
+            // 更新磁盘图表
+            diskChart.setOption({
+                series: [{
+                    data: data.disk.map(item => [item.timestamp, item.disk])
+                }]
+            });
+
+            // 更新网络图表
+            networkChart.setOption({
+                series: [{
+                    name: '接收',
+                    data: data.network.map(item => [item.timestamp, item.recv / 1024 / 1024])
+                }, {
+                    name: '发送',
+                    data: data.network.map(item => [item.timestamp, item.sent / 1024 / 1024])
+                }]
+            });
+        });
+}
+
+// 定时更新数据
+setInterval(updateCharts, 5000);
+updateCharts(); // 首次加载
+
+// 窗口大小改变时重绘图表
+window.addEventListener('resize', function() {
+    cpuChart.resize();
+    memoryChart.resize();
+    diskChart.resize();
+    networkChart.resize();
+});
+</script>
+{% endblock %} 
