@@ -1,6 +1,6 @@
-# Linux System Runtime Parameter Collection Tool
+# VTrace
 
-A monitoring tool for collecting and displaying Linux system runtime parameters, designed for AI-assisted operations and maintenance systems.
+A monitoring tool for collecting and displaying operation system runtime parameters and log files, designed for AI-assisted operations and maintenance systems.
 
 ## Features
 
